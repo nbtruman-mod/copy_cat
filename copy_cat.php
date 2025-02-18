@@ -1,5 +1,5 @@
 <?php
-
+require_once("./utilities.php");
 $username = trim(readline("Please enter MySQL username: "));
 $password = trim(readline("Please enter MySQL password: "));
 
@@ -39,7 +39,7 @@ if (!$file = fopen($csvOutput, "w"))
     echo "Could not open csv to write";
     exit();
 } else {
-    fputcsv($file, ["table", "headers", "data_type", "rows"]);
+    fputcsv($file, ["table", "columns", "rows"]);
 }
 
 $tableResult = $connect->query("SHOW TABLES");
@@ -49,13 +49,12 @@ while ($row = $tableResult->fetch_array())
     $tableName = $row[0];
 
     $columnDataResult = $connect->query("SHOW COLUMNS FROM `$tableName`");
-    $headers = [];
-    $dataTypes = [];
+    $columns = [];
 
     while ($columnRow = $columnDataResult->fetch_assoc())
     {
-        $headers[] = $columnRow["Field"];
-        $dataTypes[] = $columnRow["Type"];
+        $method = swap_for_faker_method($columnRow["Type"]);
+        $columns[] = "{$columnRow["Field"]}:{$method}";
     }
 
     $rowsResult = $connect->query("SELECT COUNT(*) AS count FROM `$tableName`");
@@ -63,8 +62,7 @@ while ($row = $tableResult->fetch_array())
 
     fputcsv($file, [
         $tableName,
-        implode(", ", $headers),
-        implode(", ", $dataTypes),
+        implode(", ", $columns),
         $rowCount
     ]);
 }
